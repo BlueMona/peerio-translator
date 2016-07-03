@@ -1,0 +1,2 @@
+# peerio-translator
+Localization library
