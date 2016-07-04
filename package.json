@@ -1,0 +1,19 @@
+{
+  "name": "peerio-translator",
+  "version": "1.0.0",
+  "description": "Localization library",
+  "main": "translator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://anri-asaturov@github.com/PeerioTechnologies/peerio-translator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PeerioTechnologies/peerio-translator/issues"
+  },
+  "homepage": "https://github.com/PeerioTechnologies/peerio-translator#readme"
+}
