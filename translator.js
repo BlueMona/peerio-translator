@@ -1,4 +1,4 @@
-(function (api) {
+(function (translator) {
     'use strict';
 
     // currently loaded translation dictionary
@@ -6,29 +6,29 @@
     // regexps cache for substituting variables in translation strings
     var regexpCache = {};
 
-    api.locale = null;
+    translator.locale = null;
 
-    api.loadLocale = function (locale) {
-        if(api.locale === locale) return Promise.resolve();
-        L.info('Loading {0} locale', locale);
+    translator.loadLocale = function (locale) {
+        if (translator.locale === locale) return Promise.resolve();
         return loadTranslationFile(locale)
-            .then(text => {
+            .then(function (text) {
                 translation = JSON.parse(text);
                 compileTranslation();
-                api.locale = locale;
-                L.info('Locale {0} loaded', locale);
-                Peerio.Action.localeChanged();
-            }).catch(err => {
-                L.error('Failed to load locale {0}. {1}', locale, err);
+                translator.locale = locale;
+                //TODO change to agnostic event system
+                if(window.Peerio && Peerio.Action) Peerio.Action.localeChanged();
+            })
+            .catch(function (err) {
+                console.error('Failed to load locale {0}. {1}', locale, err);
                 return Promise.reject(err);
             });
     };
 
-    api.has = function (id) {
+    translator.has = function (id) {
         return !!translation[id];
     };
 
-    api.t = api.translate = function (id, params, segmentParams) {
+    translator.t = translator.translate = function (id, params, segmentParams) {
         var ret = translation[id] || id;
 
         // processing variables
@@ -47,7 +47,7 @@
         if (ret.forEach) {
             var original = ret;
             ret = [];
-            original.forEach(segment=> {
+            original.forEach(function (segment) {
                 // simple string segment
                 if (typeof segment === 'string') {
                     ret.push(segment);
@@ -79,7 +79,9 @@
                 var regex = regexpCache[varName];
                 if (!regex) continue;
                 ret = segmentParams
-                    ? ret.map(segment => (_.isObject(segment) ? segment : segment.replace(regex, params[varName])))
+                    ? ret.map(function (segment) {
+                    return (_.isObject(segment) ? segment : segment.replace(regex, params[varName]))
+                })
                     : ret.replace(regex, params[varName]);
             }
         }
@@ -110,7 +112,7 @@
             substituteReferences(ref);
             if (replacements[ref]) continue;
             // saving ref string to replace later
-            replacements[ref] = api.t(ref);
+            replacements[ref] = translator.t(ref);
         }
         // replacing all referenced strings
         for (var r in replacements) {
@@ -187,6 +189,4 @@
             xhr.send('');
         });
     }
-
-
-})(typeof module !== 'undefined' && module.exports ? module.exports : (self.Translator = self.Translator || {}));
+})(typeof module !== 'undefined' && module.exports ? module.exports : (self.translator = self.translator || {}));
