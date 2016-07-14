@@ -10,6 +10,7 @@
 
     translator.loadLocale = function (locale) {
         if (translator.locale === locale) return Promise.resolve();
+        moment.locale(locale);
         return loadTranslationFile(locale)
             .then(function (text) {
                 translation = JSON.parse(text);
