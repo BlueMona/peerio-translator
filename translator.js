@@ -1,4 +1,4 @@
-const moment = require('moment');
+// const moment = require('moment');
 const _ = require('lodash');
 // currently loaded translation dictionary
 let translation = null;
@@ -9,7 +9,7 @@ let currentLocale = null;
 
 function loadLocale(localeName, localeProvider) {
     if (currentLocale === localeName) return;
-    moment.locale(localeName);
+    // moment.locale(localeName);
     currentLocale = localeName;
     translation = localeProvider[localeName];
     compileTranslation();
