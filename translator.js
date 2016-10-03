@@ -163,6 +163,9 @@ function parseSegments() {
     });
 }
 
+function tu(id, params, segmentParams) {
+    return t(id, params, segmentParams).toUpperCase();
+}
 /*
     function loadTranslationFile(locale) {
     const url = 'locales/' + locale + '.json';
