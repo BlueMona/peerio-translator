@@ -192,5 +192,6 @@ function tu(id, params, segmentParams) {
 module.exports = {
     loadLocale,
     t,
+    tu,
     has
 };
