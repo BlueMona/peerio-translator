@@ -1,97 +1,75 @@
-// const moment = require('moment');
-const _ = require('lodash');
-// currently loaded translation dictionary
+/* eslint-disable guard-for-in, no-prototype-builtins, no-param-reassign, no-confusing-arrow */
 let translation = null;
-// regexps cache for substituting variables in translation strings
-let regexpCache = {};
+let locale = null;
 
-let currentLocale = null;
-
-function loadLocale(localeName, localeProvider) {
-    if (currentLocale === localeName) return;
-    // moment.locale(localeName);
-    currentLocale = localeName;
-    translation = localeProvider[localeName];
+function setLocale(newLocale, newTranslation) {
+    if (locale === newLocale) {
+        return;
+    }
+    locale = newLocale;
+    translation = newTranslation;
     compileTranslation();
 }
 
 function has(id) {
-    return !!translation[id];
+    return translation.hasOwnProperty(id);
 }
 
-function t(id, params, segmentParams) {
+function t(id, params) {
     let ret = translation[id] || id;
 
-    // processing variables
-    const interpolateParams = arg => {
-        let s = arg;
-        if (params) {
-            _.forOwn(params, (val, varName) => {
-                const regex = regexpCache[varName];
-                if (regex) {
-                    s = s.replace(regex, val);
-                }
-            });
+    // this is segmented string
+    if (Array.isArray(ret)) {
+        // leaving original segment info intact
+        ret = ret.slice();
+        if (!params) return ret.map(s => typeof (s) === 'string' ? s : s.text);
+        // iterating segments
+        for (let i = 0; i < ret.length; i++) {
+            // plaintext segment
+            if (typeof (ret[i]) === 'string') {
+                ret[i] = replaceVars(ret[i], params);
+                continue;
+            }
+            // dynamic segment
+            const text = replaceVars(ret[i].text, params);
+            const func = params[ret[i].name];
+            if (!func) ret[i] = text;
+            else ret[i] = func(text);
         }
-        return s;
-    };
-
-    // processing segments
-    if (ret.forEach) {
-        const original = ret;
-        ret = [];
-        original.forEach(segment => {
-            // simple string segment
-            if (typeof segment === 'string') {
-                ret.push(segment);
-                return;
-            }
-            // segment with placeholders
-            const segmentProcessor = segmentParams && segmentParams[segment.name] || null;
-            if (typeof segmentProcessor === 'function') {
-                ret.push(segmentProcessor(interpolateParams(segment.text)));
-            } else {
-                // this should not happen normally, but in case there is mistake in locale
-                    // or in code - we'll show unprocessed segment text
-                ret.push(segment.text);
-            }
-        });
+        return ret;
     }
-    // attempt to make a fail-safe logic, by providing the client code with return type it expects
-        // even if there is a mixup with locales
-    if (segmentParams && !ret.forEach) {
-        ret = [ret];
-    }
-    if (!segmentParams && ret.forEach) {
-        ret = ret.join('');
-    }
-
-    // processing variables
-    if (params) {
-        _.forOwn(params, (val, varName) => {
-            const regex = regexpCache[varName];
-            if (regex) {
-                ret = segmentParams
-                ? ret.map(segment =>
-                          (_.isObject(segment) ? segment : segment.replace(regex, val)))
-                : ret.replace(regex, params[varName]);
-            }
-        });
-    }
-    return ret;
+    return params ? replaceVars(ret, params) : ret;
 }
 
+function tu(id, params) {
+    return t(id, params).toUpperCase();
+}
+
+function replaceVars(str, params) {
+    for (const key in params) {
+        if (typeof (params[key]) === 'function') continue;
+        str = replaceOneVariable(str, `{${key}}`, params[key]);
+    }
+    return str;
+}
+
+function replaceOneVariable(str, find, repl) {
+    const ret = str.replace(find, repl);
+    if (ret === str) return ret;
+    return replaceOneVariable(ret, find, repl);
+}
+
+// prepares translation file for use
 function compileTranslation() {
     // iterating here because substituteReferences needs to be recursive
-    _.forOwn(translation, (str, key) => {
+    for (const key in translation) {
         substituteReferences(key);
-    });
-    buildRegexpCache();
+    }
     parseSegments();
 }
 
 // for specified key, finds if there are any references to other keys
-    // and replaces original references with referenced strings, recursively
+// and replaces original references with referenced strings, recursively
 function substituteReferences(key) {
     // fallback is needed, because key might be a wrong reference from the string
     let str = translation[key] || key;
@@ -110,33 +88,19 @@ function substituteReferences(key) {
         match = refExp.exec(str);
     }
     // replacing all referenced strings
-    _.forOwn(replacements, (val, r) => {
-        str = str.replace(new RegExp(`\{#${r}\}`, 'g'), val);
-    });
+    for (const r in replacements) {
+        str = str.replace(new RegExp(`\{#${r}\}`, 'g'), replacements[r]);
+    }
     // saving processed string
     translation[key] = str;
 }
 
-function buildRegexpCache() {
-    regexpCache = {};
-    const varExp = /\{([a-zA-Z0-9_]+)\}/g;
-    _.forOwn(translation, (str) => {
-        let match = varExp.exec(str);
-        while (match !== null) {
-            // found variable name for future substitutions
-            const varName = match[1];
-            if (regexpCache[varName]) {
-                // generating replacement regexp
-                regexpCache[varName] = new RegExp(`\{${varName}\}`, 'g');
-            }
-            match = varExp.exec(str);
-        }
-    });
-}
-
+// Finds strings containing segments and converts them into array of segments
+// array can contain plain strings and {name:string, text:string} objects for the segments to replace/wrap
 function parseSegments() {
     const segmentExp = /<([a-zA-Z0-9_]+)>(.*?)<\/>/g;
-    _.forOwn(translation, (str, key) => {
+    for (const key in translation) {
+        const str = translation[key];
         let segments = null;
         let position = 0;
         let match = segmentExp.exec(str);
@@ -160,37 +124,12 @@ function parseSegments() {
             }
             translation[key] = segments;
         }
-    });
+    }
 }
 
-function tu(id, params, segmentParams) {
-    return t(id, params, segmentParams).toUpperCase();
-}
-/*
-    function loadTranslationFile(locale) {
-    const url = 'locales/' + locale + '.json';
-    return new Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest();
-
-        if (xhr.overrideMimeType)
-            xhr.overrideMimeType('text/plain');
-
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200 || xhr.status === 0)
-                    resolve(xhr.responseText);
-                else
-                    reject();
-            }
-        };
-
-        xhr.open('GET', url);
-        xhr.send('');
-    });
-}*/
 
 module.exports = {
-    loadLocale,
+    setLocale,
     t,
     tu,
     has

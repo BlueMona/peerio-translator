@@ -35,14 +35,9 @@ ___updating files___
 2. `gulp localize` will pull latest translations file from transifex (except english)
 3. `gulp compile` will copy all translations from /locales folder to /www/locales
 
-___tools___
-
-1. `gulp find-unused-locale-strings` does what it says
-2. `gulp find-duplicate-locale-strings` does what it says
-
 ___using translator api___
 
-Translation function is available as `t()` or `window.t()` or `Peerio.Translator.t()` or `Peerio.Translator.translate()`
+Translation function is available as `t()`
 
 1. regular string
   ```
