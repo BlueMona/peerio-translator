@@ -2,6 +2,15 @@
 
 Peerio client apps implement translations with Peerio.Translator library
 
+### cheatsheet 
+```
+"Some text {#otherId}" - will find another key with name 'otherId' and put it's value in the placeholder
+
+"Retry: {count}" - call as t('key', {count: 5})
+
+"Click <site>here {count} times</>" - call as t('key', {count:5, site: text => <a href=''>text</a>})
+```
+
 ### Translation workflow
 
 1. New strings are added to 'dev' branch of peerio-copy/client.json
