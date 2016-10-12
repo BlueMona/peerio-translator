@@ -1,5 +1,5 @@
 /* eslint-disable guard-for-in, no-prototype-builtins, no-param-reassign, no-confusing-arrow */
-let translation = null;
+let translation = {};
 let locale = null;
 
 function setLocale(newLocale, newTranslation) {
