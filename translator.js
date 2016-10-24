@@ -1,4 +1,10 @@
 /* eslint-disable guard-for-in, no-prototype-builtins, no-param-reassign, no-confusing-arrow */
+import { observable } from 'mobx';
+
+const config = observable({
+    locale: null
+});
+
 let translation = {};
 let locale = null;
 
@@ -7,6 +13,7 @@ function setLocale(newLocale, newTranslation) {
         return;
     }
     locale = newLocale;
+    config.locale = newLocale;
     translation = newTranslation;
     compileTranslation();
 }
@@ -16,6 +23,10 @@ function has(id) {
 }
 
 function t(id, params) {
+    /* hacky way to make t observable */
+    if (config.locale !== locale) {
+        console.error('locale mismatch');
+    }
     let ret = translation[id] || id;
 
     // this is segmented string
