@@ -2,7 +2,7 @@
 import { observable } from 'mobx';
 
 const config = observable({
-    translation: {}
+    locale: null
 });
 
 let translation = {};
@@ -16,7 +16,6 @@ function setLocale(newLocale, newTranslation) {
     config.locale = newLocale;
     translation = newTranslation;
     compileTranslation();
-    config.translation = translation;
 }
 
 function has(id) {
@@ -24,7 +23,11 @@ function has(id) {
 }
 
 function t(id, params) {
-    let ret = config.translation[id] || id;
+    /* hacky way to make t observable */
+    if (config.locale !== locale) {
+        console.error('locale mismatch');
+    }
+    let ret = translation[id] || id;
 
     // this is segmented string
     if (Array.isArray(ret)) {
