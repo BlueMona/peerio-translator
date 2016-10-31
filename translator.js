@@ -100,7 +100,8 @@ function substituteReferences(key) {
 function parseSegments() {
     const segmentExp = /<([a-zA-Z0-9_]+)>(.*?)<\/>/g;
     for (const key in translation) {
-        const str = translation[key];
+        let str = translation[key];
+        if(!str && str !== '') str = key;
         let segments = null;
         let position = 0;
         let match = segmentExp.exec(str);
@@ -110,7 +111,7 @@ function parseSegments() {
             const segmentText = match[2];
             // check if we need to push a plain text segment
             if (match.index > position) {
-                segments.push(str.substr(position, match.index));
+                segments.push(str.substring(position, match.index));
             }
             segments.push({ name: segmentName, text: segmentText });
             position = segmentExp.lastIndex;
@@ -120,7 +121,7 @@ function parseSegments() {
         if (segments) {
             // tail, if any
             if (position !== 0 && position < str.length) {
-                segments.push(str.substr(position));
+                segments.push(str.substring(position));
             }
             translation[key] = segments;
         }
