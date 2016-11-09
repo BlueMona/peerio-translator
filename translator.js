@@ -33,7 +33,7 @@ function t(id, params) {
             // dynamic segment
             const text = replaceVars(ret[i].text, params);
             const func = params[ret[i].name];
-            if (!func) ret[i] = text;
+            if (!func || typeof(func)!=='function') ret[i] = text;
             else ret[i] = func(text);
         }
         return ret;
