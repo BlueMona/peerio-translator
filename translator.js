@@ -17,8 +17,8 @@ function setLocale(newLocale, newTranslation) {
  * @param {string} pattern
  * @param {string} replacement
  */
-function setStringReplacement(pattern, replacement){
-    replacements.push({regex: new RegExp(pattern, 'g'), str: replacement});
+function setStringReplacement(pattern, replacement) {
+    replacements.push({ regex: new RegExp(pattern, 'g'), str: replacement });
 }
 
 function has(id) {
@@ -43,7 +43,7 @@ function t(id, params) {
             // dynamic segment
             const text = replaceVars(ret[i].text, params);
             const func = params[ret[i].name];
-            if (!func || typeof(func)!=='function') ret[i] = text;
+            if (!func || typeof(func) !== 'function') ret[i] = text;
             else ret[i] = func(text);
         }
         return ret;
@@ -112,7 +112,7 @@ function parseSegments() {
     const segmentExp = /<([a-zA-Z0-9_]+)>(.*?)<\/>/g;
     for (const key in translation) {
         let str = translation[key];
-        if(!str && str !== '') str = key;
+        if (!str && str !== '') str = key;
         let segments = null;
         let position = 0;
         let match = segmentExp.exec(str);
@@ -139,22 +139,32 @@ function parseSegments() {
     }
 }
 
-function makeStringReplacements(){
-    for(const key in translation){
-        let str = translation[key];
-        const isSegment = typeof str !== 'string';
-        if(isSegment){
-            str = str.text;
-        }
-        for(const r of replacements){
-            str = str.replace(r.regex, r.str);
-        }
-        if(isSegment){
-            translation[key].text = str;
-        } else {
-            translation[key] = str;
-        }
+function makeStringReplacements() {
+    if (replacements.length === 0) return;
 
+    for (const key in translation) {
+        if (typeof translation[key] !== 'string') {
+            replaceInSegment(str);
+        } else {
+            translation[key] = replaceOne(str);
+        }
+    }
+}
+
+function replaceOne(str) {
+    for (const r of replacements) {
+        str = str.replace(r.regex, r.str);
+    }
+    return str;
+}
+
+function replaceInSegment(seg) {
+    for (let i = 0; i < seg.length; i++) {
+        if (typeof(seg[i]) === 'string') {
+            seg[i] = replaceOne(seg[i]);
+        } else {
+            seg[i].text = replaceOne(seg[i].text);
+        }
     }
 }
 
