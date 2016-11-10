@@ -1,6 +1,7 @@
 /* eslint-disable guard-for-in, no-prototype-builtins, no-param-reassign, no-confusing-arrow */
 let translation = {};
 let locale = null;
+const replacements = [];
 
 function setLocale(newLocale, newTranslation) {
     if (locale === newLocale) {
@@ -9,6 +10,15 @@ function setLocale(newLocale, newTranslation) {
     locale = newLocale;
     translation = newTranslation;
     compileTranslation();
+}
+
+/**
+ *
+ * @param {string} pattern
+ * @param {string} replacement
+ */
+function setStringReplacement(pattern, replacement){
+    replacements.push({regex: new RegExp(pattern, 'g'), str: replacement});
 }
 
 function has(id) {
@@ -66,6 +76,7 @@ function compileTranslation() {
         substituteReferences(key);
     }
     parseSegments();
+    makeStringReplacements();
 }
 
 // for specified key, finds if there are any references to other keys
@@ -128,10 +139,30 @@ function parseSegments() {
     }
 }
 
+function makeStringReplacements(){
+    for(const key in translation){
+        let str = translation[key];
+        const isSegment = typeof str !== 'string';
+        if(isSegment){
+            str = str.text;
+        }
+        for(const r of replacements){
+            str = str.replace(r.regex, r.str);
+        }
+        if(isSegment){
+            translation[key].text = str;
+        } else {
+            translation[key] = str;
+        }
+
+    }
+}
+
 
 module.exports = {
     setLocale,
     t,
     tu,
-    has
+    has,
+    setStringReplacement
 };
