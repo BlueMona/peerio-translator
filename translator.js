@@ -143,10 +143,11 @@ function makeStringReplacements() {
     if (replacements.length === 0) return;
 
     for (const key in translation) {
-        if (typeof translation[key] !== 'string') {
-            replaceInSegment(str);
+        const val = translation[key];
+        if (typeof val !== 'string') {
+            replaceInSegment(val);
         } else {
-            translation[key] = replaceOne(str);
+            translation[key] = replaceOne(val);
         }
     }
 }
