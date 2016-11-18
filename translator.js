@@ -18,7 +18,7 @@ function setLocale(newLocale, newTranslation) {
  * @param {string} replacement
  */
 function setStringReplacement(pattern, replacement) {
-    replacements.push({ regex: new RegExp(pattern, 'g'), str: replacement });
+    replacements.push({ regex: new RegExp(pattern, 'gm'), str: replacement });
 }
 
 function has(id) {
@@ -28,27 +28,29 @@ function has(id) {
 function t(id, params) {
     let ret = translation[id] || id;
 
-    // this is segmented string
-    if (Array.isArray(ret)) {
-        // leaving original segment info intact
-        ret = ret.slice();
-        if (!params) return ret.map(s => typeof (s) === 'string' ? s : s.text);
-        // iterating segments
-        for (let i = 0; i < ret.length; i++) {
-            // plaintext segment
-            if (typeof (ret[i]) === 'string') {
-                ret[i] = replaceVars(ret[i], params);
-                continue;
-            }
-            // dynamic segment
-            const text = replaceVars(ret[i].text, params);
-            const func = params[ret[i].name];
-            if (!func || typeof(func) !== 'function') ret[i] = text;
-            else ret[i] = func(text);
-        }
-        return ret;
+    // regular(not segmented) string
+    if (!Array.isArray(ret)) {
+        return params ? replaceVars(ret, params) : ret;
     }
-    return params ? replaceVars(ret, params) : ret;
+
+    // this is segmented string
+    // leaving original segment info intact
+    ret = ret.slice();
+    if (!params) return ret.map(s => typeof (s) === 'string' ? s : s.text);
+    // iterating segments
+    for (let i = 0; i < ret.length; i++) {
+        // plaintext segment
+        if (typeof (ret[i]) === 'string') {
+            ret[i] = replaceVars(ret[i], params);
+            continue;
+        }
+        // dynamic segment
+        const text = replaceVars(ret[i].text, params);
+        const func = params[ret[i].name];
+        if (!func || typeof(func) !== 'function') ret[i] = text;
+        else ret[i] = func(text);
+    }
+    return ret;
 }
 
 function tu(id, params) {
@@ -71,12 +73,16 @@ function replaceOneVariable(str, find, repl) {
 
 // prepares translation file for use
 function compileTranslation() {
+    if(translation.__peerioTranslatorCompiled){
+        return;
+    }
     // iterating here because substituteReferences needs to be recursive
     for (const key in translation) {
         substituteReferences(key);
     }
     parseSegments();
     makeStringReplacements();
+    translation.__peerioTranslatorCompiled = true;
 }
 
 // for specified key, finds if there are any references to other keys
