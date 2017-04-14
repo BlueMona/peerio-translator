@@ -46,7 +46,7 @@ function t(id, params) {
     // this is taggged string
     // leaving original segment info intact
     ret = ret.slice();
-    if (!params) return ret.map(s => typeof (s) === 'string' ? s : s.text);
+    // if (!params) return ret.map(s => typeof (s) === 'string' ? s : s.text);
     // iterating segments
     for (let i = 0; i < ret.length; i++) {
         // plaintext segment
@@ -58,7 +58,7 @@ function t(id, params) {
         const tagName = ret[i].name;
         const tagContent = replaceVars(ret[i].text, params);
         // we try to get tag handler from parameters (has priority) or predefined handlers
-        let handler = params[tagName] || tagHandlers[tagName];
+        let handler = (params && params[tagName]) || tagHandlers[tagName];
         let param = null;
         // then we try to see if it's an anchor tag
         if (!handler && tagName.startsWith('a-')) {
@@ -76,6 +76,7 @@ function tu(id, params) {
 }
 
 function replaceVars(str, params) {
+    if (!params) return str;
     for (const key in params) {
         if (typeof (params[key]) === 'function') continue;
         str = replaceOneVariable(str, `{${key}}`, params[key]);
