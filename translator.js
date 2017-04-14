@@ -2,6 +2,8 @@
 let translation = {};
 let locale = null;
 const replacements = [];
+const tagHandlers = {};
+let urlMap = {};
 
 function setLocale(newLocale, newTranslation) {
     if (locale === newLocale) {
@@ -21,6 +23,14 @@ function setStringReplacement(pattern, replacement) {
     replacements.push({ regex: new RegExp(pattern, 'gm'), str: replacement });
 }
 
+function setTagHandler(tag, fn) {
+    tagHandlers[tag] = fn;
+}
+
+function setUrlMap(map) {
+    urlMap = map;
+}
+
 function has(id) {
     return translation.hasOwnProperty(id);
 }
@@ -28,12 +38,12 @@ function has(id) {
 function t(id, params) {
     let ret = translation[id] || id;
 
-    // regular(not segmented) string
+    // regular(not tagged) string
     if (!Array.isArray(ret)) {
         return params ? replaceVars(ret, params) : ret;
     }
 
-    // this is segmented string
+    // this is taggged string
     // leaving original segment info intact
     ret = ret.slice();
     if (!params) return ret.map(s => typeof (s) === 'string' ? s : s.text);
@@ -44,11 +54,19 @@ function t(id, params) {
             ret[i] = replaceVars(ret[i], params);
             continue;
         }
-        // dynamic segment
-        const text = replaceVars(ret[i].text, params);
-        const func = params[ret[i].name];
-        if (!func || typeof(func) !== 'function') ret[i] = text;
-        else ret[i] = func(text);
+        // tag segment
+        const tagName = ret[i].name;
+        const tagContent = replaceVars(ret[i].text, params);
+        // we try to get tag handler from parameters (has priority) or predefined handlers
+        let handler = params[tagName] || tagHandlers[tagName];
+        let param = null;
+        // then we try to see if it's an anchor tag
+        if (!handler && tagName.startsWith('a-')) {
+            handler = tagHandlers.a;
+            param = urlMap[tagName.split('-')[1]];
+        }
+        if (!handler || typeof (handler) !== 'function') ret[i] = tagContent;
+        else ret[i] = handler(tagContent, param);
     }
     return ret;
 }
@@ -73,14 +91,14 @@ function replaceOneVariable(str, find, repl) {
 
 // prepares translation file for use
 function compileTranslation() {
-    if(translation.__peerioTranslatorCompiled){
+    if (translation.__peerioTranslatorCompiled) {
         return;
     }
     // iterating here because substituteReferences needs to be recursive
     for (const key in translation) {
         substituteReferences(key);
     }
-    parseSegments();
+    parseTags();
     makeStringReplacements();
     translation.__peerioTranslatorCompiled = true;
 }
@@ -90,7 +108,7 @@ function compileTranslation() {
 function substituteReferences(key) {
     // fallback is needed, because key might be a wrong reference from the string
     let str = translation[key] || key;
-    const replacements = {};
+    const refs = {};
     const refExp = /\{#([a-zA-Z0-9_]+)\}/g;
     let match = refExp.exec(str);
     while (match !== null) {
@@ -98,41 +116,41 @@ function substituteReferences(key) {
         const ref = match[1];
         // processing it first, so we don't use unprocessed string
         substituteReferences(ref);
-        if (!replacements[ref]) {
+        if (!refs[ref]) {
             // saving ref string to replace later
-            replacements[ref] = t(ref);
+            refs[ref] = t(ref);
         }
         match = refExp.exec(str);
     }
     // replacing all referenced strings
-    for (const r in replacements) {
-        str = str.replace(new RegExp(`\{#${r}\}`, 'g'), replacements[r]);
+    for (const r in refs) {
+        str = str.replace(new RegExp(`\{#${r}\}`, 'g'), refs[r]);
     }
     // saving processed string
     translation[key] = str;
 }
 
-// Finds strings containing segments and converts them into array of segments
-// array can contain plain strings and {name:string, text:string} objects for the segments to replace/wrap
-function parseSegments() {
-    const segmentExp = /<([a-zA-Z0-9_]+)>(.*?)<\/>/g;
+// Finds strings containing tags and converts them into array of string segments
+// array can contain plain strings and {name:string, text:string} objects for the tags to replace/wrap
+function parseTags() {
+    const tagExp = /<([a-zA-Z0-9_\-]+)>(.*?)<\/>/g;
     for (const key in translation) {
         let str = translation[key];
         if (!str && str !== '') str = key;
         let segments = null;
         let position = 0;
-        let match = segmentExp.exec(str);
+        let match = tagExp.exec(str);
         while (match !== null) {
             segments = segments || [];
-            const segmentName = match[1];
-            const segmentText = match[2];
+            const tagName = match[1];
+            const tagContent = match[2];
             // check if we need to push a plain text segment
             if (match.index > position) {
                 segments.push(str.substring(position, match.index));
             }
-            segments.push({ name: segmentName, text: segmentText });
-            position = segmentExp.lastIndex;
-            match = segmentExp.exec(str);
+            segments.push({ name: tagName, text: tagContent });
+            position = tagExp.lastIndex;
+            match = tagExp.exec(str);
         }
 
         if (segments) {
@@ -167,7 +185,7 @@ function replaceOne(str) {
 
 function replaceInSegment(seg) {
     for (let i = 0; i < seg.length; i++) {
-        if (typeof(seg[i]) === 'string') {
+        if (typeof (seg[i]) === 'string') {
             seg[i] = replaceOne(seg[i]);
         } else {
             seg[i].text = replaceOne(seg[i].text);
@@ -175,11 +193,12 @@ function replaceInSegment(seg) {
     }
 }
 
-
 module.exports = {
     setLocale,
     t,
     tu,
     has,
-    setStringReplacement
+    setStringReplacement,
+    setTagHandler,
+    setUrlMap
 };
