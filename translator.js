@@ -134,7 +134,7 @@ function substituteReferences(key) {
 // Finds strings containing tags and converts them into array of string segments
 // array can contain plain strings and {name:string, text:string} objects for the tags to replace/wrap
 function parseTags() {
-    const tagExp = /<([a-zA-Z0-9_\-]+)>(.*?)<\/>/g;
+    const tagExp = /(<([a-zA-Z0-9_\-]+)>(.*?)<\/>|<([a-zA-Z0-9_\-]+)\/>)/g;
     for (const key in translation) {
         let str = translation[key];
         if (!str && str !== '') str = key;
@@ -143,8 +143,8 @@ function parseTags() {
         let match = tagExp.exec(str);
         while (match !== null) {
             segments = segments || [];
-            const tagName = match[1];
-            const tagContent = match[2];
+            const tagName = match[4] || match[2];
+            const tagContent = match[3] || '';
             // check if we need to push a plain text segment
             if (match.index > position) {
                 segments.push(str.substring(position, match.index));
