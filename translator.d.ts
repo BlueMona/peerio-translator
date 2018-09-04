@@ -3,7 +3,7 @@ type TemplateParam = (text: string) => any;
 type Params = { [key: string]: VarParam | TemplateParam };
 type Result = string | Array<any>;
 
-export module 'peerio-translator' {
+declare module 'peerio-translator' {
   export function setLocale(locale: string, translation: { [key: string]: string }): void;
   export function t(id: string, params?: Params): Result;
   export function tu(id: string, params?: Params): Result;
