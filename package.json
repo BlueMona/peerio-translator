@@ -1,8 +1,9 @@
 {
   "name": "peerio-translator",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Localization library",
   "main": "translator.js",
+  "types": "translator.d.ts",
   "scripts": {
     "lint": "eslint . --fix",
     "test": "karma start"
