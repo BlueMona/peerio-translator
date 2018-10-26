@@ -2,6 +2,15 @@ import { makeStringReplacements } from './string-replacement';
 import { parseTags } from './parse-tags';
 import { substituteReferences } from './substitute-references';
 
+export const _WARN_NO_ID = (id: string) =>
+  `No translation string found for id "${id}". Returning the id instead.`;
+
+export const _WARN_NO_URL = (id: string, urlId: string) =>
+  `A translation string wants a URL, but the URL map doesn't contain a corresponding entry: "${urlId}" (in id ${id})`;
+
+export const _WARN_NO_TAG = (id: string, tagName: string) =>
+  `A translation string with a tag was requested, but no handler was provided or registered ahead of time.\n(Tag <${tagName}> in id "${id}")`;
+
 type TemplateHandler = (text: string, param: string | null) => unknown;
 
 /** Map of raw ("uncompiled") strings for translation. */
@@ -74,7 +83,7 @@ export function t(id: string, params?: ParameterMap): string | unknown[] {
   const ret = translation[id];
 
   if (!ret) {
-    console.warn(`No translation string found for id "${id}". Using the id instead.`);
+    console.warn(_WARN_NO_ID(id));
     return id;
   }
 
@@ -90,19 +99,30 @@ export function t(id: string, params?: ParameterMap): string | unknown[] {
     }
 
     // tag segment
-    const { name, text } = seg;
+    const { name: tagName, text } = seg;
     const tagContent = replaceVars(text, params);
 
     // we try to get tag handler from parameters (has priority) or predefined handlers
-    let handler = (params && params[name]) || tagHandlers[name];
+    let handler = (params && params[tagName]) || tagHandlers[tagName];
+
+    // "param" can currently only be a url.
     let param: string | null = null;
 
     // then we try to see if it's an anchor tag
-    if (!handler && name.startsWith('a-')) {
+    if (!handler && tagName.startsWith('a-')) {
       handler = tagHandlers.a;
-      param = urlMap[name.split('-')[1]];
+      const urlName = tagName.split('-')[1];
+      param = urlMap[urlName];
+      if (!param) {
+        console.warn(_WARN_NO_URL(id, urlName));
+      }
     }
-    if (!handler || typeof handler !== 'function') return tagContent;
+
+    if (!handler || typeof handler !== 'function') {
+      console.warn(_WARN_NO_TAG(id, tagName));
+      return tagContent;
+    }
+
     return handler(tagContent, param);
   });
 }

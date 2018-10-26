@@ -2,8 +2,8 @@
   "name": "peerio-translator",
   "version": "2.0.0-alpha.0",
   "description": "Localization library",
-  "main": "dist/translator.js",
-  "types": "dist/translator.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "run-s -l test:*",

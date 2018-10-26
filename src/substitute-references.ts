@@ -1,4 +1,4 @@
-import { RawTranslationMap } from './translator';
+import { RawTranslationMap } from '.';
 
 /**
  * for specified key, finds if there are any references to other keys and
