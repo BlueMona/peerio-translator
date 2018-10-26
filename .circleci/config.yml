@@ -1,0 +1,27 @@
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:10.8
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: 'Checking Versions'
+          command: |
+            node --version
+            npm --version
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}-
+      - run:
+          name: install-dependencies
+          command: npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+      - run:
+          name: 'tests - typescript, eslint, jest, sass, prettier'
+          command: npm test
