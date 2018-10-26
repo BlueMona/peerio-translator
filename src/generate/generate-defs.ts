@@ -1,5 +1,7 @@
 import { substituteReferences } from '../substitute-references';
 
+const PREDEFINED_TAGS: ReadonlySet<string> = new Set(['br', 'i', 'b']);
+
 const PREFIX = '// prettier-ignore\nexport interface LocalizationStrings {';
 const SUFFIX = '}';
 const INDENT = '  ';
@@ -31,7 +33,7 @@ export function generateDefs(rawTranslation: { [key: string]: string }): string 
   return defs.join('\n');
 }
 
-export function getParamAndReturnTypes(translation: { [key: string]: string }) {
+function getParamAndReturnTypes(translation: { [key: string]: string }) {
   const types: {
     [key: string]: { paramTypes: { [param: string]: string } | null; returnType: string };
   } = {};
@@ -65,16 +67,19 @@ function getParamTypes(templateString: string): { [param: string]: string } | nu
   // Parse tags:
   let tagMatch = tagExp.exec(templateString);
   if (tagMatch !== null) {
-    didMatch = true;
-
     do {
-      if (tagMatch[3]) {
-        // Self-closing; no params
-        paramTypes[tagMatch[3]] = '() => JSX.Element';
-      } else if (tagMatch[1]) {
-        paramTypes[tagMatch[1]] = '(text: string) => JSX.Element';
-      } else {
-        throw new Error(`Can't parse result of tag regex!`);
+      const tag = tagMatch[3] || tagMatch[1];
+      const isParam = !tag.startsWith('a-') && !PREDEFINED_TAGS.has(tag);
+      if (isParam) {
+        didMatch = true;
+        if (tagMatch[3]) {
+          // Self-closing; no params
+          paramTypes[tagMatch[3]] = '() => JSX.Element';
+        } else if (tagMatch[1]) {
+          paramTypes[tagMatch[1]] = '(text: string) => JSX.Element';
+        } else {
+          throw new Error(`Can't parse result of tag regex!`);
+        }
       }
 
       tagMatch = tagExp.exec(templateString);
@@ -101,34 +106,13 @@ function getParamTypes(templateString: string): { [param: string]: string } | nu
   return null;
 }
 
-export function getReturnType(templateString: string): string {
+function getReturnType(templateString: string): string {
   // Either a tag like <something>(text, or nothing)</> OR a self-closing tag
   // like <whatever/>. No support for nested or overlapping tags.
   const tagExp = /<([a-zA-Z0-9_-]+)>(.*?)<\/>|<([a-zA-Z0-9_-]+)\/>/g;
 
-  let match = tagExp.exec(templateString);
-  const didMatch = match !== null;
-
-  let returnTuple: string[] = [];
-
-  let position = 0;
-  while (match !== null) {
-    // check if we need to push a plain text segment
-    if (match.index > position) {
-      returnTuple.push('string');
-    }
-
-    returnTuple.push('JSX.Element');
-    position = tagExp.lastIndex;
-    match = tagExp.exec(templateString);
-  }
-
-  if (didMatch) {
-    // tail, if any
-    if (position !== 0 && position < templateString.length) {
-      returnTuple.push('string');
-    }
-    return `[${returnTuple.join(', ')}]`;
+  if (tagExp.test(templateString)) {
+    return 'React.ReactChild[]';
   }
 
   return 'string';
