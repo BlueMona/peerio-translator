@@ -35,7 +35,8 @@ describe('Translator', () => {
     segMix3: '<partSeg>hello {var} {var}</> {var}',
     segMix4: 'head {var1} <partSeg>hello {var}</> tail',
     segMix5: 'head {var1} <partSeg>{#greet}hello {var}</> tail{#greet}',
-    selfClose: 'head <smiley/> tail'
+    selfClose: 'head <smiley/> tail',
+    refTag: 'head {#selfClose} tail'
   };
 
   // 01 ----------------------------------------------------------------------------------------------------------------
@@ -221,6 +222,12 @@ describe('Translator', () => {
 
   it('should handle self-closing tags', () => {
     expect(t('selfClose', { smiley: () => ':)' })).toEqual(['head ', ':)', ' tail']);
+
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('should handle a reference to a string with tags', () => {
+    expect(t('refTag', { smiley: () => ':)' })).toEqual(['head head ', ':)', ' tail tail']);
 
     expect(console.warn).not.toHaveBeenCalled();
   });
