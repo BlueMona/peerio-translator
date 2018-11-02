@@ -1,4 +1,7 @@
-import { RawTranslationMap } from '.';
+import { RawTranslationMap } from '../interfaces';
+
+export const _WARN_SUBSTITUTE_REF_NOT_FOUND = (key: string) =>
+  `Ref not found while trying to substitute translation references: "${key}". The key itself will be used instead.`;
 
 /**
  * for specified key, finds if there are any references to other keys and
@@ -8,9 +11,7 @@ export function substituteReferences(rawTranslation: RawTranslationMap, key: str
   let str = rawTranslation[key];
 
   if (!str) {
-    console.warn(
-      `Ref not found while trying to substitute translation references: "${key}". The key itself will be used instead.`
-    );
+    console.warn(_WARN_SUBSTITUTE_REF_NOT_FOUND(key));
     str = key;
   }
 

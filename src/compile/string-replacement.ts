@@ -1,4 +1,4 @@
-import { TranslationMap, Segment } from '.';
+import { TranslationMap, Segment } from '../interfaces';
 
 export function makeStringReplacements(
   translation: TranslationMap,

@@ -1,11 +1,28 @@
-import { substituteReferences } from '../substitute-references';
+import { substituteReferences } from '../compile/substitute-references';
 
+const INCLUDE_SNIPPETS = true;
+const MAX_SNIPPET_LENGTH = 60;
+
+/**
+ * Defines a set of tags for which, in templated translation strings, a
+ * corresponding function parameter will not be required to be passed in. Link
+ * tags (`<a-whatever>`) also don't require a corresponding function.
+ */
 const PREDEFINED_TAGS: ReadonlySet<string> = new Set(['br', 'i', 'b']);
 
-const PREFIX = '// prettier-ignore\nexport interface LocalizationStrings {';
+const PREAMBLE =
+  '// This file was automatically generated. Do not edit by hand!\n// prettier-ignore';
+const PREFIX = 'export interface LocalizationStrings {';
 const SUFFIX = '}';
 const INDENT = '  ';
 
+/**
+ * Parse all translation strings and return a string representing the generated
+ * typedefs, ready to be written to a file.
+ *
+ * @param rawTranslation The "raw" translation, as might be imported directly
+ *                       from eg. `en.json`.
+ */
 export function generateDefs(rawTranslation: { [key: string]: string }): string {
   // first we need to substitute references, since they impact the return types
   for (const key of Object.keys(rawTranslation)) {
@@ -14,23 +31,31 @@ export function generateDefs(rawTranslation: { [key: string]: string }): string 
 
   const types = getParamAndReturnTypes(rawTranslation);
 
-  const defs = [PREFIX];
+  const defsFile = [PREAMBLE, PREFIX];
   for (const [id, { paramTypes, returnType }] of Object.entries(types)) {
+    if (INCLUDE_SNIPPETS) {
+      // Insert a snippet of the raw translation as a hint for usage.
+      const rawStr = rawTranslation[id];
+      const snippet = rawStr.substr(0, MAX_SNIPPET_LENGTH);
+      const isTruncated = snippet.length < rawStr.length;
+      defsFile.push(`/** ${snippet}${isTruncated ? '…' : ''} */`);
+    }
+
     const params: string[] = [];
     if (paramTypes) {
       for (const [key, value] of Object.entries(paramTypes)) {
         params.push(`'${key}': ${value}`);
       }
     }
-    defs.push(
+    defsFile.push(
       `${INDENT}'${id}': (${
         params.length > 0 ? `params: { ${params.join(', ')} }` : ''
       }) => ${returnType};`
     );
   }
-  defs.push(SUFFIX);
+  defsFile.push(SUFFIX);
 
-  return defs.join('\n');
+  return defsFile.join('\n');
 }
 
 function getParamAndReturnTypes(translation: { [key: string]: string }) {

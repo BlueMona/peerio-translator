@@ -1,4 +1,7 @@
-import { setLocale, t, tu, has, _WARN_NO_ID, _WARN_NO_TAG } from '../src';
+import { setLocale, t, tu, has } from '../src';
+
+import { _WARN_NO_ID, _WARN_NO_TAG, _WARN_NO_URL } from '../src/t';
+import { _WARN_SUBSTITUTE_REF_NOT_FOUND } from '../src/compile/substitute-references';
 
 // Order matters!
 describe('Translator', () => {
@@ -43,9 +46,7 @@ describe('Translator', () => {
   it('should set locale and warn about errors', () => {
     setLocale('es', es);
 
-    expect(console.warn).toHaveBeenCalledWith(
-      'Ref not found while trying to substitute translation references: "0". The key itself will be used instead.'
-    );
+    expect(console.warn).toHaveBeenCalledWith(_WARN_SUBSTITUTE_REF_NOT_FOUND('0'));
 
     // FIXME: test behaviour, not implementation
     // expect(locale).toBe('es');

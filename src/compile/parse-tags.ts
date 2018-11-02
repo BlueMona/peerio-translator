@@ -1,4 +1,4 @@
-import { RawTranslationMap, TranslationMap, Segment } from '.';
+import { RawTranslationMap, TranslationMap, Segment } from '../interfaces';
 
 /**
  * Finds strings containing tags and converts them into array of string
