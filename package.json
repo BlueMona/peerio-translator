@@ -1,6 +1,6 @@
 {
   "name": "peerio-translator",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.1",
   "description": "Localization library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,14 +13,15 @@
     "test:eslint": "eslint 'src/**/*.{ts,tsx}'",
     "test:prettier": "prettier 'src/**/*.{ts,tsx}' -l",
     "test:ts": "tsc --noEmit --pretty",
-    "test:jest": "jest --colors"
+    "test:jest": "jest --colors",
+    "prepublishOnly": "npm test && npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "git+https:/github.com/PeerioTechnologies/peerio-translator.git"
+    "url": "https://github.com/PeerioTechnologies/peerio-translator"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Technologies Peerio Inc. <support@peerio.com>",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/PeerioTechnologies/peerio-translator/issues"
   },

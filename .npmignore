@@ -1,0 +1,5 @@
+.env
+.circleci/
+.vscode/
+src/
+test/
