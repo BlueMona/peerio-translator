@@ -3,6 +3,10 @@ import { setLocale, t, tu, has } from '../src';
 import { _WARN_NO_ID, _WARN_NO_TAG, _WARN_NO_URL } from '../src/t';
 import { _WARN_SUBSTITUTE_REF_NOT_FOUND } from '../src/compile/substitute-references';
 
+// TODO: could be split up, tidied, not rely on test order/statefulness; needing
+// to assert that console.warn shouldn't have been called is annoying + easy to
+// forget
+
 // Order matters!
 describe('Translator', () => {
   console.warn = jest.fn();
@@ -47,10 +51,6 @@ describe('Translator', () => {
     setLocale('es', es);
 
     expect(console.warn).toHaveBeenCalledWith(_WARN_SUBSTITUTE_REF_NOT_FOUND('0'));
-
-    // FIXME: test behaviour, not implementation
-    // expect(locale).toBe('es');
-    // expect(translation).toBe(es);
   });
 
   // 02 ----------------------------------------------------------------------------------------------------------------
@@ -87,16 +87,10 @@ describe('Translator', () => {
   });
 
   // 03 ----------------------------------------------------------------------------------------------------------------
-  it('should change locale', () => {
+  it('should change locale and warn about errors', () => {
     setLocale('ru', ru);
 
-    expect(console.warn).toHaveBeenCalledWith(
-      'Ref not found while trying to substitute translation references: "nope". The key itself will be used instead.'
-    );
-
-    // FIXME: test behaviour, not implementation
-    // expect(locale).toBe('ru');
-    // expect(translation).toBe(ru);
+    expect(console.warn).toHaveBeenCalledWith(_WARN_SUBSTITUTE_REF_NOT_FOUND('nope'));
   });
 
   // 04 ----------------------------------------------------------------------------------------------------------------
