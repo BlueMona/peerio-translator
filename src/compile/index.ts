@@ -1,5 +1,5 @@
 import { makeStringReplacements } from './string-replacement';
-import { parseTags } from './parse-tags';
+import { parseAllTags } from './parse-tags';
 import { substituteReferences } from './substitute-references';
 
 import { RawTranslationMap, StringReplacements } from '../interfaces';
@@ -13,6 +13,6 @@ export function compileTranslation(
   for (const key of Object.keys(rawTranslation)) {
     substituteReferences(rawTranslation, key);
   }
-  parseTags(rawTranslation);
+  parseAllTags(rawTranslation);
   makeStringReplacements(rawTranslation, replacements);
 }

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 const CMD_NAME = 'makedefs';
 const USAGE = `Usage: ${CMD_NAME} infile.json outfile.d.ts`;
 
