@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "makedefs": "./dist/generate/cli.js"
+    "makedefs": "./dist/generate/makedefs.js",
+    "makepseudo": "./dist/generate/makepseudo.js"
   },
   "scripts": {
     "build": "rm -rf dist/ && tsc",
